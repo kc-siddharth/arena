@@ -1,0 +1,28 @@
+{
+  "arenaTitle": "KC's Game Arena",
+  "arenaTagline": "Pick a game. Grab your friends. Play on your phones.",
+  "games": [
+    {
+      "id": "avalon",
+      "title": "Devasura",
+      "subtitle": "Avalon · Devas vs Asuras",
+      "description": "Hidden-role social deduction for 5–10 players. Devas vs Asuras, secret Yajnas, and one last strike for Kamsa to name Narada.",
+      "emoji": "🕉️",
+      "accent": "#e8c15a",
+      "players": "5–10",
+      "path": "avalon/",
+      "status": "live"
+    },
+    {
+      "id": "coming-soon",
+      "title": "Your next game",
+      "subtitle": "Coming soon",
+      "description": "Add a game folder and a new entry in games.json to make it appear here.",
+      "emoji": "✨",
+      "accent": "#7c5cff",
+      "players": "—",
+      "path": "",
+      "status": "soon"
+    }
+  ]
+}

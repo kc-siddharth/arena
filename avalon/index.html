@@ -11,8 +11,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Arena Game</title>
-<link rel="icon" type="image/png" href="../../branding/kc_favicon.png">
-<link rel="apple-touch-icon" href="../../branding/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="../branding/kc_favicon.png">
+<link rel="apple-touch-icon" href="../branding/apple-touch-icon.png">
 <style>
   :root{
     --bg:#0e1020; --panel:#1a1d35; --panel2:#232748;
@@ -120,7 +120,7 @@
    - Leave API_URL blank when the page is served BY Apps Script.
    - For GitHub Pages: paste your Apps Script Web App /exec URL here.
    ============================================================ */
-var API_URL = "https://script.google.com/macros/s/AKfycby8_deWekE3o7XJLqOxCk6F9S2M4n5IA_6OjGcVfYkwlYbg04lLUKHHHYrcR4odeIvL/exec"; // e.g. "https://script.google.com/macros/s/AKfy.../exec"
+var API_URL = ""; // e.g. "https://script.google.com/macros/s/AKfy.../exec"
 
 var USE_GAS = (typeof google !== "undefined" && google.script && google.script.run);
 
@@ -142,7 +142,7 @@ function callApi(action, payload){
    THEME BOOT  (colours, title, Kc branding + easter eggs)
    ============================================================ */
 // The real Kc monogram (hand-drawn double gold ring). Relative to games/<game>/.
-var BRAND_SRC = "../../branding/kc_monogram.png";
+var BRAND_SRC = "../branding/kc_monogram.png";
 function kcMark(){ return '<img class="kc" src="'+BRAND_SRC+'" alt="Kc">'; }
 function applyTheme(){
   var c=THEME.colors||{};

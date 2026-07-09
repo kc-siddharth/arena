@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<!-- THE ARENA — landing page that lists all games. Reads games.json.
+     Add a game: create a folder under games/ and add an entry to games.json. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Game Arena</title>
+<link rel="icon" type="image/png" href="branding/kc_favicon.png">
+<link rel="apple-touch-icon" href="branding/apple-touch-icon.png">
+<meta property="og:title" content="KC's Game Arena">
+<meta property="og:description" content="Phone party games to play with friends.">
+<meta property="og:image" content="branding/kc_share.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  :root{ --bg:#0e1020; --panel:#1a1d35; --text:#eef0ff; --muted:#9aa0c4; --line:#2c315a; --accent:#7c5cff; --gold:#e8c15a; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:640px; margin:0 auto; padding:34px 18px 60px;}
+  .logo{width:92px; height:92px; display:block; margin:0 auto 12px; cursor:pointer;}
+  @keyframes egg{0%{transform:scale(1) rotate(0)}50%{transform:scale(1.12) rotate(6deg)}100%{transform:scale(1) rotate(0)}}
+  .logo.egg{animation:egg .6s ease;}
+  h1{font-size:34px; letter-spacing:2px; text-align:center; margin:0 0 6px;
+     background:linear-gradient(90deg,#e8c15a,#7c5cff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; font-weight:800;}
+  .tag{text-align:center; color:var(--muted); margin:0 0 30px; font-size:14px;}
+  .grid{display:grid; grid-template-columns:1fr; gap:16px;}
+  @media(min-width:520px){ .grid{grid-template-columns:1fr 1fr;} }
+  .game{display:block; text-decoration:none; color:inherit; background:var(--panel); border:1px solid var(--line);
+    border-radius:18px; padding:22px; position:relative; overflow:hidden; transition:transform .12s, border-color .12s;}
+  .game:active{transform:scale(.99);}
+  .game.live:hover{border-color:var(--gold);}
+  .game.soon{opacity:.6;}
+  .emoji{font-size:44px; line-height:1;}
+  .title{font-size:22px; font-weight:800; margin:12px 0 2px;}
+  .subtitle{font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--muted);}
+  .desc{font-size:14px; color:#cfd3f5; margin:12px 0 14px; line-height:1.5;}
+  .meta{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted);}
+  .pill{background:#0c0e1f; border:1px solid var(--line); border-radius:20px; padding:4px 10px;}
+  .play{position:absolute; top:18px; right:18px; font-size:11px; font-weight:800; letter-spacing:1px;
+    padding:5px 10px; border-radius:20px;}
+  .play.live{background:var(--gold); color:#1a1400;}
+  .play.soon{background:#2a2f57; color:var(--muted);}
+  .foot{text-align:center; color:var(--muted); font-size:12px; margin-top:34px; line-height:1.6;}
+  .spin{display:inline-block; width:20px; height:20px; border:3px solid var(--line); border-top-color:var(--accent);
+    border-radius:50%; animation:sp .8s linear infinite;}
+  @keyframes sp{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <img class="logo" id="logo" src="branding/kc_monogram.png" alt="Kc">
+  <h1 id="title">GAME ARENA</h1>
+  <div class="tag" id="tag">Loading…</div>
+  <div class="grid" id="grid"><div style="grid-column:1/-1;text-align:center"><span class="spin"></span></div></div>
+  <div class="foot">Everyone plays on their own phone. Share this page's link with your friends.</div>
+</div>
+<script>
+fetch("games.json?v="+Date.now()).then(function(r){return r.json();}).then(function(data){
+  document.getElementById("title").textContent = data.arenaTitle || "GAME ARENA";
+  document.getElementById("tag").textContent = data.arenaTagline || "";
+  var grid=document.getElementById("grid"); grid.innerHTML="";
+  (data.games||[]).forEach(function(g){
+    var live = g.status==="live" && g.path;
+    var a=document.createElement(live?"a":"div");
+    a.className="game "+(live?"live":"soon");
+    if(live) a.href=g.path;
+    a.style.setProperty("border-top","3px solid "+(g.accent||"#7c5cff"));
+    a.innerHTML=
+      '<div class="play '+(live?"live":"soon")+'">'+(live?"PLAY ▸":"SOON")+'</div>'+
+      '<div class="emoji">'+(g.emoji||"🎮")+'</div>'+
+      '<div class="subtitle">'+esc(g.subtitle||"")+'</div>'+
+      '<div class="title" style="color:'+(g.accent||"#eef0ff")+'">'+esc(g.title||"")+'</div>'+
+      '<div class="desc">'+esc(g.description||"")+'</div>'+
+      '<div class="meta"><span class="pill">👥 '+esc(g.players||"—")+'</span></div>';
+    grid.appendChild(a);
+  });
+}).catch(function(){
+  document.getElementById("grid").innerHTML='<div style="grid-column:1/-1;text-align:center;color:#9aa0c4">Could not load games.json</div>';
+});
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+/* Easter egg: tap the Kc logo 5x for a hidden hello. */
+(function(){var n=0,t=null,l=document.getElementById("logo");if(!l)return;
+  l.onclick=function(){n++;l.classList.remove("egg");void l.offsetWidth;l.classList.add("egg");
+    clearTimeout(t);t=setTimeout(function(){n=0;},1400);
+    if(n>=5){n=0;var d=document.createElement("div");
+      d.style.cssText="position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:#000c;color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:9";
+      d.textContent="⚔️ Welcome to Kc's Arena. Play well.";document.body.appendChild(d);setTimeout(function(){d.remove();},2600);}};
+})();
+</script>
+</body>
+</html>

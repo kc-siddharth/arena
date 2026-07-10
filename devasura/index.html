@@ -259,6 +259,7 @@ function screenHome(){
       '<button id="create" class="secondary">Create room</button>'+
     '</div>'+
     '<button id="lb" class="secondary">🏆 Leaderboard</button>'+
+    '<button id="guide" class="secondary">📖 How to play</button>'+
     '<div class="card"><label>Theme</label><div class="skins" id="skins"></div></div>';
   wireTitle();
   renderSkins();
@@ -303,6 +304,7 @@ function screenHome(){
     }).catch(function(){ toast("Connection error — check the deployment / API URL."); screenHome(); });
   };
   document.getElementById("lb").onclick=showLeaderboard;
+  document.getElementById("guide").onclick=showGuide;
 }
 
 // Skin picker (used on the home screen). Applies instantly + persists.
@@ -356,6 +358,8 @@ function draw(st){
   wireQuestTiles(st);
   // A quick way to re-check your own role + secret info during play.
   appendRoleButton(st);
+  // Cheatsheet, reachable from any in-game screen.
+  appendGuideButton(st);
   // Host gets a persistent "Close room" control mid-game (lobby has its own).
   if(st.youAreHost && st.phase!=="LOBBY" && st.phase!=="GAME_OVER") appendHostClose(st);
 }
@@ -434,6 +438,46 @@ function showQuest(q){
       (q.twoFail?' · needed 2 to fail':'')+'.</div>';
   showModal(html);
 }
+
+// Quick gameplay cheatsheet (theme-aware).
+function showGuide(){
+  var mw=esc(THEME.missionWord), mws=esc(THEME.missionWordPlural);
+  var good=esc(factionName("good")), evil=esc(factionName("evil"));
+  var succ=esc(THEME.successWord), fail=esc(THEME.failWord);
+  var line=function(c,txt){ return '<div style="margin:6px 0;line-height:1.45">'+roleEmoji(c)+' <b>'+esc(roleName(c))+'</b> — '+txt+'</div>'; };
+  var html='<h3 class="center">How to play</h3>'+
+    '<div class="card" style="margin-bottom:10px"><b>🎯 Goal</b><br>'+
+      good+' try to complete <b>3 '+mws+'</b>. '+evil+' try to make <b>3 fail</b>. Everyone\'s role is secret.</div>'+
+    '<div class="card" style="margin-bottom:10px"><b>🔁 Each round</b>'+
+      '<div style="margin-top:6px">1. The <b>'+esc(T("leader"))+'</b> picks a party of the size shown on screen.</div>'+
+      '<div style="margin-top:4px">2. Everyone votes <b>Approve / Reject</b>. A majority sends the party. <b>5 rejects in a row → '+evil+' win.</b></div>'+
+      '<div style="margin-top:4px">3. Party members secretly play <b>'+succ+'</b> or <b>'+fail+'</b>. '+good+' must play '+succ+'; '+evil+' may sabotage. One '+fail+' fails the '+mw+' (some need two — flagged on screen).</div>'+
+    '</div>'+
+    '<div class="card" style="margin-bottom:10px"><b>🏆 Winning</b>'+
+      '<div style="margin-top:6px">• 3 '+mws+' succeed → '+good+' win… <i>but</i> '+esc(roleName("Assassin"))+' then gets one guess at '+esc(roleName("Merlin"))+'. Correct = '+evil+' steal the win.</div>'+
+      '<div style="margin-top:4px">• 3 '+mws+' fail → '+evil+' win.</div>'+
+    '</div>'+
+    '<div class="card"><b>🎭 Roles</b> <span class="muted">(only those in play matter)</span>'+
+      line("Merlin","sees the "+evil+" (except "+esc(roleName("Mordred"))+"). Stay hidden.")+
+      line("Percival","sees "+esc(roleName("Merlin"))+" &amp; "+esc(roleName("Morgana"))+" — can\'t tell which.")+
+      line("Loyal Servant","no powers — deduce and vote well.")+
+      line("Assassin","if "+good+" win, name "+esc(roleName("Merlin"))+" to steal the game.")+
+      line("Morgana","appears as "+esc(roleName("Merlin"))+" to "+esc(roleName("Percival"))+".")+
+      line("Mordred","hidden from "+esc(roleName("Merlin"))+".")+
+      line("Oberon","evil, but unknown to the other "+evil+".")+
+      line("Minion of Mordred","sabotage the "+mws+".")+
+    '</div>'+
+    '<div class="hint center">Tip: tap a finished '+mw+' tile to see who went and how it ended.</div>';
+  showModal(html);
+}
+function appendGuideButton(st){
+  if(st.phase==="LOBBY") return; // lobby has its own guide button
+  var b=document.createElement("button");
+  b.className="secondary"; b.style.marginTop="10px";
+  b.textContent="📖 How to play";
+  b.onclick=showGuide;
+  el.appendChild(b);
+}
 function hostCloseRoom(code){
   if(!confirm("Close room "+code+" for everyone? The code will stop working.")) return;
   callApi("closeRoom",{roomCode:S.roomCode,playerId:S.playerId}).then(function(){ toast("Room closed"); leaveToHome(); })
@@ -481,7 +525,11 @@ function drawLobby(st){
     html+='<div class="card center muted">Waiting for the host to start…</div>';
     html+='<button id="leave" class="secondary">Leave room</button>';
   }
+  html+='<button id="guide" class="secondary">📖 How to play</button>';
   el.innerHTML=html;
+
+  var gd=document.getElementById("guide");
+  if(gd) gd.onclick=showGuide;
 
   if(isHost){
     document.querySelectorAll("[data-cfg]").forEach(function(node){

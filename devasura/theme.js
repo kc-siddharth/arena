@@ -126,6 +126,33 @@ var THEMES = {
   }
 };
 
+/* ============================================================================
+   VISUAL SKINS  —  colour palettes, independent of the narrative theme above.
+   Players switch between these live (persisted). To add one: copy a block,
+   give it a key + name + mode, set the CSS variables. `mode` is just a hint.
+   ============================================================================ */
+var SKINS = {
+  kathakali: {
+    name: "Kathakali Night", blurb: "dark · pacha green + brass", mode: "dark",
+    vars: {
+      "--bg": "#131A18", "--panel": "#1D2623", "--inset": "#141B18", "--text": "#EFE7D3",
+      "--muted": "#A7A08C", "--line": "#2B3733", "--gold": "#C7A24A", "--good": "#2E9366",
+      "--evil": "#C33B2B", "--ok": "#5E8F52", "--accent": "#C7A24A", "--accent-text": "#1a1405",
+      "--chip": "#26302C", "--chip-text": "#EFE7D3"
+    }
+  },
+  kasavu: {
+    name: "Kasavu Onam", blurb: "light · cream + zari gold", mode: "light",
+    vars: {
+      "--bg": "#F4EBD6", "--panel": "#FCF5E5", "--inset": "#EFE3C9", "--text": "#241E15",
+      "--muted": "#857556", "--line": "#DFD0AC", "--gold": "#B98F2E", "--good": "#2F7D57",
+      "--evil": "#B0402C", "--ok": "#5E8A4E", "--accent": "#B98F2E", "--accent-text": "#241905",
+      "--chip": "#EDE1C6", "--chip-text": "#3A2F1E"
+    }
+  }
+};
+var DEFAULT_SKIN = "kathakali";
+
 /* ---- resolved theme + helpers (used by index.html) ---- */
 var THEME = THEMES[ACTIVE_THEME] || THEMES.avalon;
 

@@ -13,78 +13,84 @@
 <title>Arena Game</title>
 <link rel="icon" type="image/png" href="../branding/kc_favicon.png">
 <link rel="apple-touch-icon" href="../branding/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Mukta:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0e1020; --panel:#1a1d35; --panel2:#232748;
-    --good:#3b82f6; --evil:#ef4444; --gold:#e8c15a; --text:#eef0ff; --muted:#9aa0c4;
-    --ok:#22c55e; --line:#2c315a; --accent:#7c5cff;
+    /* Defaults = Kathakali Night (dark). applySkin() overrides these at runtime. */
+    --bg:#131A18; --panel:#1D2623; --inset:#141B18; --text:#EFE7D3; --muted:#A7A08C;
+    --line:#2B3733; --gold:#C7A24A; --good:#2E9366; --evil:#C33B2B; --ok:#5E8F52;
+    --accent:#C7A24A; --accent-text:#1a1405; --chip:#26302C; --chip-text:#EFE7D3;
+    --font-head:'Marcellus',Georgia,'Times New Roman',serif;
+    --font-body:'Mukta',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; padding:0; background:var(--bg); color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    -webkit-font-smoothing:antialiased;}
+    font-family:var(--font-body); -webkit-font-smoothing:antialiased;}
   #app{max-width:520px; margin:0 auto; min-height:100vh; padding:18px 16px 20px; position:relative;}
   h1,h2,h3{margin:0 0 10px;}
-  h1{font-size:30px; letter-spacing:2px; text-align:center; color:var(--gold); font-weight:800; position:relative;}
+  h1{font-size:32px; letter-spacing:2px; text-align:center; color:var(--gold); font-weight:700; position:relative; font-family:var(--font-head);}
+  h2{font-family:var(--font-head); font-weight:700;}
   .sub{text-align:center; color:var(--muted); margin:-4px 0 22px; font-size:13px; letter-spacing:1px;}
   .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px; margin:0 0 14px;}
   label{display:block; font-size:13px; color:var(--muted); margin:12px 0 6px;}
   input[type=text],input[type=password]{width:100%; padding:14px; font-size:17px; border-radius:12px;
-    border:1px solid var(--line); background:#0c0e1f; color:var(--text); outline:none;}
-  input:focus{border-color:var(--accent);}
+    border:1px solid var(--line); background:var(--inset); color:var(--text); outline:none; font-family:var(--font-body);}
+  input:focus{border-color:var(--gold);}
   button{width:100%; padding:15px; font-size:17px; font-weight:700; border:none; border-radius:12px;
-    background:var(--accent); color:#fff; cursor:pointer; margin-top:12px;}
+    background:var(--accent); color:var(--accent-text); cursor:pointer; margin-top:12px; font-family:var(--font-body);}
   button:active{transform:translateY(1px);}
-  button.secondary{background:#2a2f57;}
-  button.good{background:var(--good);}
-  button.evil{background:var(--evil);}
-  button.ok{background:var(--ok);}
-  button.gold{background:var(--gold); color:#1a1400;}
+  button.secondary{background:var(--chip); color:var(--chip-text);}
+  button.good{background:var(--good); color:#fff;}
+  button.evil{background:var(--evil); color:#fff;}
+  button.ok{background:var(--ok); color:#fff;}
+  button.gold{background:var(--gold); color:var(--accent-text);}
   button:disabled{opacity:.4; cursor:not-allowed;}
   .row{display:flex; gap:10px;}
   .row>button{margin-top:0;}
   .muted{color:var(--muted); font-size:13px;}
   .center{text-align:center;}
   .code{font-size:40px; font-weight:800; letter-spacing:10px; text-align:center; color:var(--gold);
-    background:#0c0e1f; border:1px dashed var(--line); border-radius:14px; padding:14px; margin:6px 0;}
+    background:var(--inset); border:1px dashed var(--line); border-radius:14px; padding:14px; margin:6px 0; font-family:var(--font-head);}
   .avatars{display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:8px;}
-  .av{font-size:26px; text-align:center; padding:10px 0; background:#0c0e1f; border:2px solid transparent;
+  .av{font-size:26px; text-align:center; padding:10px 0; background:var(--inset); border:2px solid transparent;
     border-radius:12px; cursor:pointer;}
-  .av.sel{border-color:var(--gold); background:#20233f;}
+  .av.sel{border-color:var(--gold); background:color-mix(in srgb, var(--gold) 16%, var(--inset));}
   .av.secret{box-shadow:0 0 10px var(--gold);}
   .plist{display:flex; flex-direction:column; gap:8px; margin-top:8px;}
-  .pitem{display:flex; align-items:center; gap:12px; background:#0c0e1f; border:1px solid var(--line);
+  .pitem{display:flex; align-items:center; gap:12px; background:var(--inset); border:1px solid var(--line);
     border-radius:12px; padding:10px 12px;}
   .pitem .em{font-size:24px;}
   .pitem .nm{font-weight:700; flex:1;}
-  .badge{font-size:11px; padding:3px 8px; border-radius:20px; background:#2a2f57; color:var(--muted);}
-  .badge.leader{background:var(--gold); color:#1a1400;}
-  .badge.team{background:var(--accent); color:#fff;}
-  .badge.done{background:var(--ok); color:#04210f;}
+  .badge{font-size:11px; padding:3px 8px; border-radius:20px; background:var(--chip); color:var(--muted);}
+  .badge.leader{background:var(--gold); color:var(--accent-text);}
+  .badge.team{background:var(--accent); color:var(--accent-text);}
+  .badge.done{background:var(--ok); color:#fff;}
   .toggle{display:flex; align-items:center; justify-content:space-between; padding:12px 4px; border-bottom:1px solid var(--line);}
   .toggle:last-child{border-bottom:none;}
-  .sw{width:52px; height:30px; border-radius:20px; background:#2a2f57; position:relative; transition:.15s; flex:0 0 auto;}
+  .sw{width:52px; height:30px; border-radius:20px; background:var(--chip); position:relative; transition:.15s; flex:0 0 auto;}
   .sw.on{background:var(--ok);}
   .sw i{position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#fff; transition:.15s;}
   .sw.on i{left:25px;}
   .rolecard{border-radius:18px; padding:26px 20px; text-align:center; margin-bottom:14px;}
-  .rolecard.good{background:linear-gradient(160deg,#12306e,#0b1a3d); border:1px solid var(--good);}
-  .rolecard.evil{background:linear-gradient(160deg,#5e1414,#2c0a0a); border:1px solid var(--evil);}
-  .rolecard .rn{font-size:30px; font-weight:800; margin:6px 0;}
+  .rolecard.good{background:var(--panel); background:color-mix(in srgb, var(--good) 16%, var(--panel)); border:1px solid var(--good);}
+  .rolecard.evil{background:var(--panel); background:color-mix(in srgb, var(--evil) 16%, var(--panel)); border:1px solid var(--evil);}
+  .rolecard .rn{font-size:30px; font-weight:800; margin:6px 0; font-family:var(--font-head);}
   .rolecard .em{font-size:46px; line-height:1;}
   .rolecard .side{font-size:13px; letter-spacing:3px; text-transform:uppercase;}
   .art{width:64px; height:64px; object-fit:contain; vertical-align:middle;}
   .quests{display:flex; gap:8px; justify-content:center; margin:14px 0;}
   .q{width:52px; height:64px; border-radius:12px; border:2px solid var(--line); display:flex;
-    flex-direction:column; align-items:center; justify-content:center; background:#0c0e1f; font-size:12px; color:var(--muted);}
+    flex-direction:column; align-items:center; justify-content:center; background:var(--inset); font-size:12px; color:var(--muted);}
   .q.success{border-color:var(--good); color:var(--good);}
   .q.fail{border-color:var(--evil); color:var(--evil);}
   .q .n{font-size:11px;} .q .r{font-size:22px; font-weight:800;}
   .q.cur{box-shadow:0 0 0 2px var(--gold);}
   .dots{display:flex; gap:6px; justify-content:center; margin:6px 0 0;}
-  .dot{width:10px; height:10px; border-radius:50%; background:#2a2f57;}
+  .dot{width:10px; height:10px; border-radius:50%; background:var(--chip);}
   .dot.on{background:var(--evil);}
-  .toast{position:fixed; left:50%; bottom:64px; transform:translateX(-50%); background:#000a; color:#fff;
+  .toast{position:fixed; left:50%; bottom:64px; transform:translateX(-50%); background:rgba(8,6,4,.86); color:#fff;
     padding:10px 16px; border-radius:20px; font-size:14px; z-index:50; max-width:90%; text-align:center;}
   .lbrow{display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line);}
   .lbrow .rank{width:24px; color:var(--muted); font-weight:700;}
@@ -92,10 +98,16 @@
   .lbrow .nm{flex:1; font-weight:700;}
   .lbrow .st{font-size:12px; color:var(--muted); text-align:right;}
   .hint{font-size:12px; color:var(--muted); margin-top:8px; line-height:1.5;}
-  .spin{display:inline-block; width:18px; height:18px; border:3px solid var(--line); border-top-color:var(--accent);
+  .spin{display:inline-block; width:18px; height:18px; border:3px solid var(--line); border-top-color:var(--gold);
     border-radius:50%; animation:sp .8s linear infinite; vertical-align:middle;}
   @keyframes sp{to{transform:rotate(360deg);}}
-  .pill{display:inline-block; background:#0c0e1f; border:1px solid var(--line); border-radius:20px; padding:4px 12px; margin:3px; font-size:13px;}
+  .pill{display:inline-block; background:var(--inset); border:1px solid var(--line); border-radius:20px; padding:4px 12px; margin:3px; font-size:13px;}
+  /* skin switcher */
+  .skins{display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;}
+  .skinpill{flex:1; min-width:120px; text-align:center; padding:10px; border-radius:12px; border:1px solid var(--line);
+    background:var(--inset); color:var(--text); cursor:pointer; font-size:13px; font-weight:700;}
+  .skinpill.sel{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset;}
+  .skinpill small{display:block; font-weight:400; color:var(--muted); font-size:11px; margin-top:2px;}
   /* Kc branding */
   #brand{max-width:520px; margin:6px auto 0; padding:14px 16px 22px; display:flex; align-items:center;
     justify-content:center; gap:8px; opacity:.45; cursor:pointer; user-select:none;}
@@ -145,16 +157,20 @@ function callApi(action, payload){
 var BRAND_SRC = "../branding/kc_monogram.png";
 function kcMark(){ return '<img class="kc" src="'+BRAND_SRC+'" alt="Kc">'; }
 function applyTheme(){
-  var c=THEME.colors||{};
-  var r=document.documentElement.style;
-  if(c.good)r.setProperty("--good",c.good);
-  if(c.evil)r.setProperty("--evil",c.evil);
-  if(c.gold)r.setProperty("--gold",c.gold);
-  if(c.accent)r.setProperty("--accent",c.accent);
   document.title = THEME.appTitle;
   var b=document.getElementById("brand");
   b.innerHTML = kcMark("kcg") + '<span>KC’S ARENA</span>';
   b.onclick = brandEgg;
+}
+
+/* ---- Visual skins (colours). Player choice persists in S.skin. ---- */
+function currentSkin(){ return (S.skin && SKINS[S.skin]) ? S.skin : DEFAULT_SKIN; }
+function applySkin(key){
+  var sk = SKINS[key] || SKINS[DEFAULT_SKIN];
+  var r = document.documentElement.style;
+  Object.keys(sk.vars).forEach(function(k){ r.setProperty(k, sk.vars[k]); });
+  document.body.setAttribute("data-mode", sk.mode);
+  S.skin = SKINS[key] ? key : DEFAULT_SKIN; save();
 }
 
 /* ---- Easter eggs (subtle) ----
@@ -204,6 +220,7 @@ function wireTitle(){ var t=document.getElementById("ttl"); if(t) t.onclick=func
    BOOT
    ============================================================ */
 applyTheme();
+applySkin(currentSkin());
 render();
 
 function render(){
@@ -235,8 +252,10 @@ function screenHome(){
       '<input id="pw" type="password" placeholder="host password" autocomplete="off" value="'+esc(S.password||"")+'">'+
       '<button id="create" class="secondary">Create room</button>'+
     '</div>'+
-    '<button id="lb" class="secondary">🏆 Leaderboard</button>';
+    '<button id="lb" class="secondary">🏆 Leaderboard</button>'+
+    '<div class="card"><label>Theme</label><div class="skins" id="skins"></div></div>';
   wireTitle();
+  renderSkins();
 
   var AV = (THEME.avatars||[]).slice();
   if(S.kc) AV = SECRET_AVATARS.concat(AV);
@@ -272,6 +291,21 @@ function screenHome(){
     }).catch(function(){ toast("Connection error — check the deployment / API URL."); screenHome(); });
   };
   document.getElementById("lb").onclick=showLeaderboard;
+}
+
+// Skin picker (used on the home screen). Applies instantly + persists.
+function renderSkins(){
+  var box=document.getElementById("skins"); if(!box) return;
+  var cur=currentSkin();
+  box.innerHTML="";
+  Object.keys(SKINS).forEach(function(key){
+    var sk=SKINS[key];
+    var d=document.createElement("div");
+    d.className="skinpill"+(key===cur?" sel":"");
+    d.innerHTML=esc(sk.name)+'<small>'+esc(sk.blurb||"")+'</small>';
+    d.onclick=function(){ applySkin(key); renderSkins(); };
+    box.appendChild(d);
+  });
 }
 
 /* ---------- POLLING ---------- */
@@ -399,7 +433,7 @@ function drawReveal(st){
     '<div class="em">'+roleEmoji(you.role)+'</div>'+
     '<div class="side">'+esc(factionTagline(you.side))+'</div>'+
     '<div class="rn">'+esc(roleName(you.role))+'</div>'+
-    '<div class="muted" style="color:#dfe3ff">'+esc(roleBlurb(you.role))+'</div></div>';
+    '<div class="muted" style="color:var(--text)">'+esc(roleBlurb(you.role))+'</div></div>';
 
   if(st.knowledge && st.knowledge.length){
     st.knowledge.forEach(function(k){
@@ -578,7 +612,7 @@ function drawGameOver(st){
   html+='<div class="rolecard '+(win==="good"?"good":"evil")+'">'+
     '<div class="side">Victory</div>'+
     '<div class="rn">'+esc(win==="good"?T("victoryGood"):T("victoryEvil"))+'</div>'+
-    '<div class="muted" style="color:#dfe3ff">'+esc(themeReason(st.winReason))+'</div></div>';
+    '<div class="muted" style="color:var(--text)">'+esc(themeReason(st.winReason))+'</div></div>';
 
   html+=questStrip(st);
 

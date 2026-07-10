@@ -280,7 +280,7 @@ function stopPoll(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } 
 
 function poll(){
   callApi("getState",{roomCode:S.roomCode, playerId:S.playerId}).then(function(r){
-    if(!r||!r.ok){ if(r&&/not found/i.test(r.error||"")){ leaveToHome(); } return; }
+    if(!r||!r.ok){ if(r&&/not found|expired|close/i.test(r.error||"")){ toast("Room closed or expired"); leaveToHome(); } return; }
     var st=r.state;
     var sig = signature(st);
     if(sig!==lastSig){ lastSig=sig; draw(st); }
@@ -296,15 +296,29 @@ function leaveToHome(){ stopPoll(); S.roomCode=null; S.playerId=null; save(); la
 /* ---------- MAIN DRAW ---------- */
 function draw(st){
   switch(st.phase){
-    case "LOBBY": return drawLobby(st);
-    case "ROLE_REVEAL": return drawReveal(st);
-    case "TEAM_SELECT": return drawTeamSelect(st);
-    case "TEAM_VOTE": return drawVote(st);
-    case "QUEST": return drawQuest(st);
-    case "ASSASSIN": return drawAssassin(st);
-    case "GAME_OVER": return drawGameOver(st);
+    case "LOBBY": drawLobby(st); break;
+    case "ROLE_REVEAL": drawReveal(st); break;
+    case "TEAM_SELECT": drawTeamSelect(st); break;
+    case "TEAM_VOTE": drawVote(st); break;
+    case "QUEST": drawQuest(st); break;
+    case "ASSASSIN": drawAssassin(st); break;
+    case "GAME_OVER": drawGameOver(st); break;
     default: el.innerHTML='<div class="card">Loading…</div>';
   }
+  // Host gets a persistent "Close room" control mid-game (lobby has its own).
+  if(st && st.youAreHost && st.phase!=="LOBBY" && st.phase!=="GAME_OVER") appendHostClose(st);
+}
+function appendHostClose(st){
+  var b=document.createElement("button");
+  b.className="secondary"; b.style.marginTop="10px"; b.style.opacity="0.85";
+  b.textContent="Close room (host)";
+  b.onclick=function(){ hostCloseRoom(st.roomCode); };
+  el.appendChild(b);
+}
+function hostCloseRoom(code){
+  if(!confirm("Close room "+code+" for everyone? The code will stop working.")) return;
+  callApi("closeRoom",{roomCode:S.roomCode,playerId:S.playerId}).then(function(){ toast("Room closed"); leaveToHome(); })
+    .catch(function(){ toast("Connection error"); });
 }
 function header(st, title){
   return '<div class="center" style="margin-bottom:6px"><span class="muted">ROOM</span> '+
@@ -342,7 +356,8 @@ function drawLobby(st){
       cfgToggle("oberon",roleToggle("Oberon"),c.oberon)+
       '</div>';
     html+='<button id="start" class="gold"'+(n<5||n>10?" disabled":"")+'>Start game</button>';
-    html+='<button id="leave" class="secondary">Leave room</button>';
+    html+='<button id="close" class="evil">Close room</button>';
+    html+='<div class="hint center">Rooms auto-expire 3 hours after creation.</div>';
   } else {
     html+='<div class="card center muted">Waiting for the host to start…</div>';
     html+='<button id="leave" class="secondary">Leave room</button>';
@@ -365,6 +380,8 @@ function drawLobby(st){
         if(!r.ok){ toast(r.error); } lastSig=""; poll();
       });
     };
+    var cl=document.getElementById("close");
+    if(cl) cl.onclick=function(){ hostCloseRoom(st.roomCode); };
   }
   var lv=document.getElementById("leave");
   if(lv) lv.onclick=function(){ callApi("leaveRoom",{roomCode:S.roomCode,playerId:S.playerId}).then(leaveToHome); };

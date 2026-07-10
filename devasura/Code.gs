@@ -151,6 +151,46 @@ function withLock_(fn) {
   finally { lock.releaseLock(); }
 }
 
+// ------- Room expiry / cleanup --------------------------------------
+var ROOM_TTL_MS = 3 * 60 * 60 * 1000; // rooms expire 3 hours after creation
+
+function isExpired_(state) {
+  return !!(state && state.createdAt && (nowMs_() - state.createdAt > ROOM_TTL_MS));
+}
+
+// Remove a single room's row from the Rooms sheet.
+function deleteRoomRow_(code) {
+  var sh = sheet_('Rooms', ['roomCode', 'stateJson', 'updatedAt']);
+  var data = sh.getDataRange().getValues();
+  for (var r = 1; r < data.length; r++) {
+    if (String(data[r][0]) === code) { sh.deleteRow(r + 1); return true; }
+  }
+  return false;
+}
+
+// Delete every expired (or unparseable) room. Cheap at friends-scale.
+function purgeExpiredRooms_() {
+  var sh = sheet_('Rooms', ['roomCode', 'stateJson', 'updatedAt']);
+  var data = sh.getDataRange().getValues();
+  for (var r = data.length - 1; r >= 1; r--) { // bottom-up so indices stay valid
+    var st = null;
+    try { st = JSON.parse(data[r][1]); } catch (e) {}
+    if (!st || isExpired_(st)) sh.deleteRow(r + 1);
+  }
+}
+
+// Public wrapper for a time-driven trigger (handlers should be public).
+function cleanupRooms() { purgeExpiredRooms_(); }
+
+// Run ONCE from the editor to auto-purge expired rooms every hour.
+function installCleanupTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'cleanupRooms') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('cleanupRooms').timeBased().everyHours(1).create();
+  return 'Hourly room-cleanup trigger installed.';
+}
+
 // ------- Utility -----------------------------------------------------
 function uid_() { return Utilities.getUuid(); }
 
@@ -189,6 +229,7 @@ function api(action, payload) {
       case 'createRoom':    return createRoom_(payload);
       case 'joinRoom':      return joinRoom_(payload);
       case 'leaveRoom':     return leaveRoom_(payload);
+      case 'closeRoom':     return closeRoom_(payload);
       case 'getState':      return getState_(payload);
       case 'setConfig':     return setConfig_(payload);
       case 'startGame':     return startGame_(payload);
@@ -219,6 +260,7 @@ function createRoom_(p) {
   var avatar = String(p.avatar || '').trim();
   if (!name) return err_('Enter a name.');
   return withLock_(function () {
+    purgeExpiredRooms_(); // opportunistic cleanup on each new room
     var code = uniqueRoomCode_();
     var pid = uid_();
     var state = {
@@ -256,6 +298,7 @@ function joinRoom_(p) {
     var found = readRoom_(code);
     if (!found) return err_('Room ' + code + ' not found.');
     var st = found.state;
+    if (isExpired_(st)) { deleteRoomRow_(code); return err_('Room ' + code + ' has expired — ask the host for a new code.'); }
     if (st.phase !== 'LOBBY') return err_('That game has already started.');
     if (st.players.length >= 10) return err_('Room is full (10 max).');
     // Names & avatars must be unique within the room.
@@ -291,6 +334,17 @@ function leaveRoom_(p) {
       writeRoom_(p.roomCode, st);
     }
     return ok_({});
+  });
+}
+
+// Host-only: close the room for everyone (deletes it so the code is freed).
+function closeRoom_(p) {
+  return withLock_(function () {
+    var found = readRoom_(p.roomCode);
+    if (!found) return ok_({ closed: true });
+    if (found.state.hostId !== p.playerId) return err_('Only the host can close the room.');
+    deleteRoomRow_(p.roomCode);
+    return ok_({ closed: true });
   });
 }
 
@@ -611,6 +665,7 @@ function getState_(p) {
   var found = readRoom_(p.roomCode);
   if (!found) return err_('Room not found.');
   var st = found.state;
+  if (isExpired_(st)) { deleteRoomRow_(p.roomCode); return err_('Room expired.'); }
   // mark presence (best-effort, no write to avoid lock churn on polling)
   return ok_({ state: projectState_(st, p.playerId) });
 }

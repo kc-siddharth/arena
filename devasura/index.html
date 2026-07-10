@@ -102,6 +102,12 @@
     border-radius:50%; animation:sp .8s linear infinite; vertical-align:middle;}
   @keyframes sp{to{transform:rotate(360deg);}}
   .pill{display:inline-block; background:var(--inset); border:1px solid var(--line); border-radius:20px; padding:4px 12px; margin:3px; font-size:13px;}
+  .q.done{cursor:pointer;}
+  .q.done:active{transform:translateY(1px);}
+  /* overlay modal (role & mission details) */
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:16px; z-index:100;}
+  .sheet{background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:18px; width:100%; max-width:460px; max-height:86vh; overflow:auto;}
+  .sheet h3{margin-top:0;}
   /* skin switcher */
   .skins{display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;}
   .skinpill{flex:1; min-width:120px; text-align:center; padding:10px; border-radius:12px; border:1px solid var(--line);
@@ -125,7 +131,7 @@
 <div id="app"><div class="center" style="margin-top:40vh"><span class="spin"></span></div></div>
 <div id="brand"></div>
 
-<script src="theme.js"></script>
+<script src="theme.js?v=2"></script>
 <script>
 /* ============================================================
    CONNECTION CONFIG
@@ -264,7 +270,13 @@ function screenHome(){
   AV.forEach(function(a){
     var secret = SECRET_AVATARS.indexOf(a)>=0;
     var d=document.createElement("div"); d.className="av"+(S.avatar===a?" sel":"")+(secret?" secret":""); d.textContent=a;
-    d.onclick=function(){ S.avatar=a; save(); screenHome(); };
+    d.onclick=function(){
+      S.avatar=a; save();
+      // Update the highlight in place — do NOT re-render (that would wipe the
+      // name / room-code / password fields the player has already typed).
+      Array.prototype.forEach.call(box.children, function(c){ c.classList.remove("sel"); });
+      d.classList.add("sel");
+    };
     box.appendChild(d);
   });
 
@@ -339,8 +351,13 @@ function draw(st){
     case "GAME_OVER": drawGameOver(st); break;
     default: el.innerHTML='<div class="card">Loading…</div>';
   }
+  if(!st) return;
+  // Tap any completed Yajna to see who went and how it ended.
+  wireQuestTiles(st);
+  // A quick way to re-check your own role + secret info during play.
+  appendRoleButton(st);
   // Host gets a persistent "Close room" control mid-game (lobby has its own).
-  if(st && st.youAreHost && st.phase!=="LOBBY" && st.phase!=="GAME_OVER") appendHostClose(st);
+  if(st.youAreHost && st.phase!=="LOBBY" && st.phase!=="GAME_OVER") appendHostClose(st);
 }
 function appendHostClose(st){
   var b=document.createElement("button");
@@ -348,6 +365,74 @@ function appendHostClose(st){
   b.textContent="Close room (host)";
   b.onclick=function(){ hostCloseRoom(st.roomCode); };
   el.appendChild(b);
+}
+
+// "My role & info" button — shown during active play (role is hidden then).
+function appendRoleButton(st){
+  if(!st.you || !st.you.role) return;
+  if(st.phase==="LOBBY" || st.phase==="ROLE_REVEAL" || st.phase==="GAME_OVER") return;
+  var b=document.createElement("button");
+  b.className="secondary"; b.style.marginTop="10px";
+  b.textContent="🎭 My role & info";
+  b.onclick=function(){ showRole(st); };
+  el.appendChild(b);
+}
+
+// Make completed Yajna tiles open a details sheet.
+function wireQuestTiles(st){
+  var tiles=el.querySelectorAll(".q.done");
+  Array.prototype.forEach.call(tiles,function(t){
+    t.onclick=function(){
+      var rd=+t.getAttribute("data-round");
+      var q=st.quests.filter(function(x){return x.round===rd;})[0];
+      if(q) showQuest(q);
+    };
+  });
+}
+
+/* ---------- overlay sheet + detail views ---------- */
+function showModal(inner){
+  closeModal();
+  var ov=document.createElement("div"); ov.className="overlay"; ov.id="overlay";
+  ov.innerHTML='<div class="sheet">'+inner+'<button class="secondary" id="ovclose">Close</button></div>';
+  ov.onclick=function(e){ if(e.target===ov) closeModal(); };
+  document.body.appendChild(ov);
+  document.getElementById("ovclose").onclick=closeModal;
+}
+function closeModal(){ var o=document.getElementById("overlay"); if(o) o.remove(); }
+
+function showRole(st){
+  var you=st.you; if(!you||!you.role) return;
+  var html='<div class="rolecard '+you.side+'" style="margin:0 0 12px">'+
+    '<div class="em">'+roleEmoji(you.role)+'</div>'+
+    '<div class="side">'+esc(factionTagline(you.side))+'</div>'+
+    '<div class="rn">'+esc(roleName(you.role))+'</div>'+
+    '<div class="muted" style="color:var(--text)">'+esc(roleBlurb(you.role))+'</div></div>';
+  if(st.knowledge && st.knowledge.length){
+    st.knowledge.forEach(function(k){
+      html+='<div class="card" style="margin-bottom:10px"><h3>'+esc(knowLabel(k.key))+'</h3>';
+      if(k.people.length===0) html+='<div class="muted">— nobody —</div>';
+      else html+='<div>'+k.people.map(function(pp){return '<span class="pill">'+esc(pp.avatar)+' '+esc(pp.name)+'</span>';}).join("")+'</div>';
+      html+='</div>';
+    });
+  } else {
+    html+='<div class="hint center">You have no secret information.</div>';
+  }
+  html+='<div class="hint center">Keep this to yourself!</div>';
+  showModal(html);
+}
+
+function showQuest(q){
+  var ok = q.result==="success";
+  var title = THEME.missionWord+" "+q.round;
+  var team = (q.team||[]).map(function(p){return '<span class="pill">'+esc(p.avatar)+' '+esc(p.name)+'</span>';}).join("") || '<span class="muted">—</span>';
+  var html='<h3 class="center">'+esc(title)+'</h3>'+
+    '<div class="center" style="font-size:22px;font-weight:800;margin:4px 0 12px;color:'+(ok?"var(--good)":"var(--evil)")+'">'+
+      esc(ok?THEME.successWord:THEME.failWord)+' '+(ok?"✓":"✗")+'</div>'+
+    '<div class="muted" style="margin-bottom:6px">Party that went:</div><div>'+team+'</div>'+
+    '<div class="muted" style="margin-top:12px">'+q.fails+' '+esc(THEME.failWord)+' card'+(q.fails===1?"":"s")+' played'+
+      (q.twoFail?' · needed 2 to fail':'')+'.</div>';
+  showModal(html);
 }
 function hostCloseRoom(code){
   if(!confirm("Close room "+code+" for everyone? The code will stop working.")) return;
@@ -463,9 +548,9 @@ function questStrip(st){
   var html='<div class="quests">';
   for(var i=1;i<=5;i++){
     var q=st.quests.filter(function(x){return x.round===i;})[0];
-    var cls="q"+(q?(" "+q.result):"")+((st.round===i&&!q&&st.phase!=="GAME_OVER")?" cur":"");
+    var cls="q"+(q?(" "+q.result+" done"):"")+((st.round===i&&!q&&st.phase!=="GAME_OVER")?" cur":"");
     var mark=q?(q.result==="success"?"✓":"✗"):"";
-    html+='<div class="'+cls+'"><span class="n">'+initial+i+'</span><span class="r">'+mark+'</span></div>';
+    html+='<div class="'+cls+'" data-round="'+i+'"><span class="n">'+initial+i+'</span><span class="r">'+mark+'</span></div>';
   }
   html+='</div><div class="dots">';
   for(var j=0;j<5;j++) html+='<div class="dot'+(j<st.rejectCount?" on":"")+'"></div>';
@@ -548,6 +633,7 @@ function drawQuest(st){
   var onTeam = st.players.some(function(p){return p.id===S.playerId && p.onTeam;});
   var html=header(st,missionTitle(st));
   html+=questStrip(st);
+  html+='<div class="center muted" style="margin:2px 0 10px">'+esc(T("leader"))+': <b style="color:var(--text)">'+esc(leaderName(st))+'</b></div>';
   if(st.needsTwoFails) html+='<div class="card center" style="border-color:var(--gold)"><span class="muted">This '+esc(THEME.missionWord.toLowerCase())+' needs <b>2 '+esc(THEME.failWord)+'</b> to fail.</span></div>';
 
   var team=st.players.filter(function(p){return p.onTeam;});

@@ -683,7 +683,15 @@ function projectState_(st, viewerId) {
     needsTwoFails: (st.phase === 'LOBBY') ? false : needsTwoFails_(st),
     leaderId: (st.order && st.order.length) ? currentLeaderId_(st) : null,
     proposedTeam: st.proposedTeam,
-    quests: st.quests.map(function (q) { return { round: q.round, result: q.result, fails: q.fails, twoFail: q.twoFail }; }),
+    quests: st.quests.map(function (q) {
+      return {
+        round: q.round, result: q.result, fails: q.fails, twoFail: q.twoFail,
+        team: (q.team || []).map(function (id) {
+          var pl = playerById_(st, id);
+          return pl ? { name: pl.name, avatar: pl.avatar } : { name: '?', avatar: '❔' };
+        })
+      };
+    }),
     winner: st.winner,
     winReason: st.winReason,
     youAreHost: st.hostId === viewerId,
